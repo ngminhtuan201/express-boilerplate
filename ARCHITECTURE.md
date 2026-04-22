@@ -11,26 +11,30 @@ This section outlines the high-level directory structure of the project, organiz
 │ ├── modules/ # Feature-specific modules
 │ │ ├── auth/ # Authentication module (controller, service, route, dtos)
 │ │ ├── admin/ # Admin functionality
-│ │ ├── payments/ # Payment processing
+│ │ ├── payments/ # Payment processing (Stripe, Sepay)
 │ │ ├── upload/ # File upload handling
 │ │ ├── storages/ # Storage adapters (S3, R2, local, Cloudinary)
 │ │ ├── emails/ # Email services
 │ │ └── health/ # Health check endpoints
 │ ├── libs/ # Shared libraries (passport, jwt, winston, morgan)
+│ │ ├── __tests__/ # Unit and integration tests (Jest)
 │ ├── utils/ # Utility functions (pagination, async handling, etc.)
-│ ├── models/ # Database models (user, base)
+│ ├── models/ # Database models (user, transaction, base)
 │ ├── enums/ # Enumerations (user, payment)
 │ ├── types/ # TypeScript type definitions
 │ ├── middlewares/ # Express middlewares (auth, validation, error)
 │ ├── dbs/ # Database connections (mongodb, redis)
-│ ├── worker/ # Background job processing
+│ ├── worker/ # Background job processing (BullMQ)
 │ ├── config.ts # Application configuration
 │ ├── app.ts # Express app setup
 │ ├── server.ts # Server startup
 │ ├── web-socket.ts # WebSocket integration
 │ ├── events.ts # Event handling
-│ └── errors.ts # Error definitions
+│ ├── errors.ts # Error definitions
+│ ├── swagger.ts # Swagger/OpenAPI configuration
+│ └── seeder.ts # Database seeding script
 ├── package.json # Dependencies and scripts
+├── jest.config.ts # Jest testing configuration
 └── tsconfig.json # TypeScript configuration
 
 ### 1.1 Module Structure
@@ -88,9 +92,9 @@ Technologies: Passport.js, JWT, Bcrypt
 
 Name: Payments Module
 
-Description: Processes payments using Stripe integration, handles webhooks, and manages payment adapters.
+Description: Processes payments using Stripe and Sepay integrations, handles webhooks, and manages payment adapters using the Adapter and Factory patterns.
 
-Technologies: Stripe SDK
+Technologies: Stripe SDK, Sepay PG Node SDK
 
 #### 3.2.3. File Storage Service
 
@@ -98,7 +102,7 @@ Name: Storages Module
 
 Description: Manages file uploads and storage across multiple providers (AWS S3, Cloudflare R2, local, Cloudinary).
 
-Technologies: AWS SDK, Multer
+Technologies: AWS SDK, Multer, Cloudinary SDK
 
 #### 3.2.4. Email Service
 
@@ -108,6 +112,22 @@ Description: Sends emails using Nodemailer, with background job processing for r
 
 Technologies: Nodemailer, BullMQ
 
+#### 3.2.5. Job Queue & Monitoring Service
+
+Name: Worker & Queues
+
+Description: Manages background tasks via Redis queues. Also includes a Bull-board UI for admins to monitor queue health and retry failed jobs.
+
+Technologies: BullMQ, Redis, Bull-board
+
+#### 3.2.6. API Documentation
+
+Name: Swagger UI
+
+Description: Auto-generated interactive API documentation available at `/api-docs`.
+
+Technologies: swagger-ui-express, swagger-jsdoc
+
 ## 4. Data Stores
 
 ### 4.1. Primary Database
@@ -116,9 +136,9 @@ Name: MongoDB Database
 
 Type: MongoDB
 
-Purpose: Stores user data, application state, and business entities.
+Purpose: Stores user data, transactions, application state, and business entities.
 
-Key Schemas/Collections: users
+Key Schemas/Collections: users, transactions
 
 ### 4.2. Cache and Sessions
 
@@ -126,26 +146,24 @@ Name: Redis
 
 Type: Redis
 
-Purpose: Used for caching, session management, and job queue storage.
+Purpose: Used for caching, session management (Bull-board Admin login), and job queue storage.
 
 ## 5. External Integrations / APIs
 
 Service Name: Stripe
+Purpose: Card payment processing
+Integration Method: SDK
 
-Purpose: Payment processing
-
+Service Name: SePay
+Purpose: Bank transfer payment processing (VietQR/Napas)
 Integration Method: SDK
 
 Service Name: Google OAuth
-
 Purpose: Social authentication
-
 Integration Method: Passport.js
 
 Service Name: AWS S3 / Cloudflare R2 / Cloudinary
-
 Purpose: Cloud storage
-
 Integration Method: SDK
 
 ## 6. Deployment & Infrastructure
@@ -156,35 +174,37 @@ Key Services Used: EC2, S3, R2, Cloudinary
 
 CI/CD Pipeline: GitHub Actions
 
-Monitoring & Logging: Winston, Morgan
+Monitoring & Logging: Winston, Morgan, Bull-board
 
 ## 7. Security Considerations
 
-Authentication: JWT, OAuth2 (Google)
+Authentication: JWT, OAuth2 (Google), Session (for Admin Queue UI)
 
-Authorization: Role-based access control
+Authorization: Role-based access control (RBAC)
 
-Data Encryption: TLS in transit
+Data Encryption: TLS in transit, Bcrypt for passwords
 
-Key Security Tools/Practices: Helmet, express-mongo-sanitize
+Key Security Tools/Practices: Helmet, express-mongo-sanitize, Joi data validation
 
 ## 8. Development & Testing Environment
 
-Local Setup Instructions: npm install, npm run dev
+Local Setup Instructions: `npm install`, `npm run dev`
 
-Testing Frameworks: Not specified
+Testing Frameworks: Jest, Supertest (Unit and Integration tests)
 
 Code Quality Tools: ESLint, Prettier
 
+Database Seeding: `npm run seed` to provision initial admin roles.
+
 ## 9. Future Considerations / Roadmap
 
-Implement more payment providers, enhance real-time features with WebSocket, scale with microservices if needed.
+Implement more payment providers, enhance real-time features with WebSocket, scale with microservices if needed. Add express-rate-limit to secure public APIs.
 
 ## 10. Project Identification
 
 Project Name: Express Boilerplate
 
-Repository URL: [Not specified]
+Repository URL: https://github.com/ngminhtuan201/express-boilerplate.git
 
 Primary Contact/Team: [Not specified]
 
@@ -197,3 +217,5 @@ JWT: JSON Web Token
 OAuth: Open Authorization
 
 API: Application Programming Interface
+
+RBAC: Role-Based Access Control

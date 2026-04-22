@@ -25,7 +25,7 @@ const worker = new Worker<ISendEmailJob>(
       logger.error(
         `Failed to process ${job.name}, job ${jobId}\nError: ${error}`,
       );
-      
+
       throw error;
     }
   },

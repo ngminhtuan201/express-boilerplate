@@ -97,7 +97,7 @@ export const verifyEmail = catchAsync(async (req: Request, res: Response) => {
 
   try {
     const payload = authHelper.verifyVerificationToken(token);
-    const user = await UserModel.findById(payload.userId);
+    const user = await UserModel.findOne({ id: payload.userId });
 
     if (!user) {
       throw errors.Unauthorized;

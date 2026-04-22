@@ -21,6 +21,7 @@ import {
   passportLocalStrategy,
 } from "./libs";
 import { handleResponseError } from "./middlewares";
+import { setupSwagger } from "./swagger";
 
 // Worker modules
 import { sendEmailQueue } from "./worker/modules/emails/send-email.queue";
@@ -57,11 +58,13 @@ class ServerApp {
         }),
       );
       this.app.use(express.urlencoded({ extended: true }));
-      this.app.use(express.json({
-        verify: (req: any, res, buf) => {
-          req.rawBody = buf;
-        }
-      }));
+      this.app.use(
+        express.json({
+          verify: (req: any, res, buf) => {
+            req.rawBody = buf;
+          },
+        }),
+      );
 
       // Static files
       this.app.use(
@@ -126,6 +129,9 @@ class ServerApp {
       for (const route of apiRoutes) {
         this.app.use(`/api/${route.prefix}`, route.router);
       }
+
+      // Swagger
+      setupSwagger(this.app);
 
       this.logger.info("🌐 [server] Router initialized successfully");
 
