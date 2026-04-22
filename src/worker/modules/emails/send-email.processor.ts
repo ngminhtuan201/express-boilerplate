@@ -1,22 +1,31 @@
 import { Worker } from "bullmq";
 import { config } from "../../../config";
 import { logger } from "../../../libs";
-import { emailService } from "../../../modules/emails/email.service";
+import { sendVerificationEmail } from "../../../modules/emails/email.service";
 import { ISendEmailJob } from "./send-email.job";
 import { SEND_EMAIL_QUEUE_NAME } from "./send-email.queue";
 
 const worker = new Worker<ISendEmailJob>(
   SEND_EMAIL_QUEUE_NAME,
   async (job) => {
-    const { id: jobId, data: jobData } = job;
-    logger.info(`Processing ${job.name} job ${jobId}`);
+    const {
+      id: jobId,
+      data: { type: emailType, receiver, payload },
+    } = job;
 
     try {
-      // TODO: implement email sending logic
+      logger.info(`Processing ${job.name}, job ${jobId}`);
 
-      logger.info(`Processed ${job.name} job ${jobId}`);
+      if (emailType === "verify") {
+        await sendVerificationEmail(receiver, payload?.token);
+      }
+
+      logger.info(`Processed ${job.name}, job ${jobId}`);
     } catch (error) {
-      logger.error(`Failed to process ${job.name} job ${jobId}\n${error}`);
+      logger.error(
+        `Failed to process ${job.name}, job ${jobId}\nError: ${error}`,
+      );
+      
       throw error;
     }
   },

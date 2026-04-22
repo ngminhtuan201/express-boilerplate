@@ -5,6 +5,10 @@ import {
   VerifyCallback as GoogleVerifyCallback,
 } from "passport-google-oauth20";
 import passportJwt from "passport-jwt";
+import {
+  Strategy as LocalStrategy,
+  VerifiedCallback as LocalVerifiedCallback,
+} from "passport-local";
 import { config } from "../config";
 import { errors } from "../errors";
 import { UserModel } from "../models";
@@ -65,6 +69,26 @@ export const passportGoogleStrategy = new GoogleStrategy(
       done(null, profile);
     } catch (error) {
       done(error);
+    }
+  },
+);
+
+export const passportLocalStrategy = new LocalStrategy(
+  {
+    usernameField: "username",
+    passwordField: "password",
+  },
+  (username: string, password: string, done: LocalVerifiedCallback) => {
+    try {
+      if (
+        username === config.BULL_BOARD_USERNAME &&
+        password === config.BULL_BOARD_PASSWORD
+      ) {
+        return done(null, { username });
+      }
+      return done(null, false, { message: "Invalid username or password" });
+    } catch (error) {
+      return done(error);
     }
   },
 );

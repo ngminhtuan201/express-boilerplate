@@ -1,6 +1,5 @@
 // Modules
 import "./modules/emails/send-email.processor";
-import "./modules/audio/audio.processor";
 
 import { connectToMongoDB, initRedis } from "../dbs";
 import { logger } from "../libs";

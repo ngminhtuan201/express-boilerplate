@@ -1,5 +1,5 @@
 {
-  "name": "vydora-server",
+  "name": "express-boilerplate",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -36,11 +36,13 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.983.0",
+    "@bull-board/express": "^7.0.0",
     "@google/genai": "^1.26.0",
     "@types/nodemailer": "^7.0.4",
     "bcryptjs": "^3.0.2",
     "bull": "^4.16.5",
     "bullmq": "^5.66.5",
+    "cloudinary": "^2.9.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
@@ -62,6 +64,7 @@
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "passport-jwt": "^4.0.1",
+    "passport-local": "^1.0.0",
     "replicate": "^1.4.0",
     "slugify": "^1.6.6",
     "stripe": "^20.1.0",

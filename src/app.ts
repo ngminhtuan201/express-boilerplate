@@ -1,7 +1,10 @@
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
-import ExpressMongoSanitize from "express-mongo-sanitize";
+// import ExpressMongoSanitize from "express-mongo-sanitize";
+import { createBullBoard } from "@bull-board/api";
+import { BullMQAdapter } from "@bull-board/api/bullMQAdapter";
+import { ExpressAdapter } from "@bull-board/express";
 import expressSession from "express-session";
 import http from "http";
 import passport from "passport";
@@ -15,15 +18,19 @@ import {
   morganRequestSuccessHandler,
   passportGoogleStrategy,
   passportJWTStrategy,
+  passportLocalStrategy,
 } from "./libs";
 import { handleResponseError } from "./middlewares";
+
+// Worker modules
+import { sendEmailQueue } from "./worker/modules/emails/send-email.queue";
 
 // API routes
 import { adminRouter } from "./modules/admin/admin.route";
 import { authRouter } from "./modules/auth/auth.route";
-import { uploadRouter } from "./modules/upload/upload.route";
-import { paymentRouter } from "./modules/payments/payment.route";
 import { healthRouter } from "./modules/health/health.route";
+import { paymentRouter } from "./modules/payments/payment.route";
+import { uploadRouter } from "./modules/upload/upload.route";
 
 class ServerApp {
   private app: express.Application;
@@ -69,12 +76,14 @@ class ServerApp {
       this.logger.info("📦 [redis] Connection initialized successfully");
 
       // MongoDB sanitize
-      this.app.use(ExpressMongoSanitize());
+      // this.app.use(ExpressMongoSanitize());
 
       // Passport
       this.app.use(passport.initialize());
+      this.app.use(passport.session());
       passport.use(passportJWTStrategy);
       passport.use(passportGoogleStrategy);
+      passport.use("local", passportLocalStrategy);
       passport.serializeUser((user, done) => {
         done(null, user);
       });
@@ -118,6 +127,59 @@ class ServerApp {
 
       // Error handler
       this.app.use(handleResponseError);
+
+      // Bull board
+      this.app.set("views", path.join(__dirname, "../views"));
+      this.app.set("view engine", "ejs");
+
+      const serverAdapter = new ExpressAdapter();
+      serverAdapter.setBasePath("/admin/queues");
+
+      createBullBoard({
+        queues: [new BullMQAdapter(sendEmailQueue)],
+        serverAdapter,
+      });
+
+      this.app.get("/admin/queues/login", (_req, res) => {
+        res.render("admin-queues-login");
+      });
+
+      this.app.post("/admin/queues/login", (req, res, next) => {
+        passport.authenticate("local", (err: any, user: any, _info: any) => {
+          if (err) {
+            return next(err);
+          }
+
+          if (!user) {
+            return res.redirect("/admin/queues/login");
+          }
+
+          req.login(user, (err) => {
+            if (err) {
+              return next(err);
+            }
+
+            req.session.save((err) => {
+              if (err) {
+                return next(err);
+              }
+
+              res.redirect("/admin/queues");
+            });
+          });
+        })(req, res, next);
+      });
+
+      this.app.use(
+        "/admin/queues",
+        (req, res, next) => {
+          if (req.isAuthenticated()) {
+            return next();
+          }
+          res.redirect("/admin/queues/login");
+        },
+        serverAdapter.getRouter(),
+      );
 
       // Server
       const host = config.APP_HOST;

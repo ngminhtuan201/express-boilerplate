@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-const requireEnv = (key: string): string => {
+const requireValue = (key: string): string => {
   const value = process.env[key];
   if (!value) {
     throw new Error(`Missing environment variable: ${key}`);
@@ -12,7 +12,7 @@ const requireEnv = (key: string): string => {
 
 export const config = {
   // App
-  APP_NAME: process.env.APP_NAME || "Vydora",
+  APP_NAME: process.env.APP_NAME || "express-boilerplate",
   APP_HOST: process.env.APP_HOST || "http://localhost",
   APP_PORT: +process.env.APP_PORT || 8000,
 
@@ -23,24 +23,26 @@ export const config = {
   VERIFICATION_TOKEN_EXPIRY_MINUTES: +process.env.VERIFICATION_TOKEN_EXPIRY_MINUTES || 30, // prettier-ignore
 
   // Database
-  MONGODB_URI: process.env.MONGODB_URI || "mongodb://localhost:27017/vydora",
+  // prettier-ignore
+  MONGODB_URI: process.env.MONGODB_URI || "mongodb://localhost:27017/express-boilerplate",
 
   // Google OAuth
-  GOOGLE_OAUTH_CLIENT_ID: requireEnv("GOOGLE_OAUTH_CLIENT_ID"),
-  GOOGLE_OAUTH_CLIENT_SECRET: requireEnv("GOOGLE_OAUTH_CLIENT_SECRET"),
-  GOOGLE_OAUTH_REDIRECT_URL: requireEnv("GOOGLE_OAUTH_REDIRECT_URL"),
+  GOOGLE_OAUTH_CLIENT_ID: requireValue("GOOGLE_OAUTH_CLIENT_ID"),
+  GOOGLE_OAUTH_CLIENT_SECRET: requireValue("GOOGLE_OAUTH_CLIENT_SECRET"),
+  GOOGLE_OAUTH_REDIRECT_URL: requireValue("GOOGLE_OAUTH_REDIRECT_URL"),
 
   // JWT
-  JWT_ACCESS_TOKEN_SECRET: requireEnv("JWT_ACCESS_TOKEN_SECRET"),
+  JWT_ACCESS_TOKEN_SECRET: requireValue("JWT_ACCESS_TOKEN_SECRET"),
   JWT_ACCESS_TOKEN_EXPIRY_MINUTES: +(process.env.JWT_ACCESS_TOKEN_EXPIRY_MINUTES || 15), // prettier-ignore
-  JWT_REFRESH_TOKEN_SECRET: requireEnv("JWT_REFRESH_TOKEN_SECRET"),
+  JWT_REFRESH_TOKEN_SECRET: requireValue("JWT_REFRESH_TOKEN_SECRET"),
   JWT_REFRESH_TOKEN_EXPIRY_MINUTES: +process.env.JWT_REFRESH_TOKEN_EXPIRY_MINUTES || 24 * 60 * 30, // prettier-ignore
 
   // Cookies
-  COOKIE_SECRET_KEY: requireEnv("COOKIE_SECRET_KEY"),
+  COOKIE_SECRET_KEY: requireValue("COOKIE_SECRET_KEY"),
+  COOKIE_AUTH: requireValue("COOKIE_AUTH"),
 
   // Resend
-  RESEND_API_KEY: requireEnv("RESEND_API_KEY"),
+  RESEND_API_KEY: requireValue("RESEND_API_KEY"),
   RESEND_EMAIL_FROM: process.env.RESEND_EMAIL_FROM || "onboarding@resend.dev",
 
   // Payment
@@ -54,11 +56,18 @@ export const config = {
   STORAGE_PROVIDER: process.env.STORAGE_PROVIDER || "local",
 
   // Local storage
-  LOCAL_STORAGE_ROOT_DIR: process.env.LOCAL_STORAGE_ROOT_DIR || "uploads",
+  LOCAL_STORAGE_DIR: process.env.LOCAL_STORAGE_DIR || "storages",
+
+  // Upload
+  UPLOAD_DIR: process.env.UPLOAD_DIR || "upload",
 
   // Redis
   REDIS_HOST: process.env.REDIS_HOST || "localhost",
   REDIS_PORT: +process.env.REDIS_PORT || 6379,
   REDIS_USERNAME: process.env.REDIS_USERNAME,
   REDIS_PASSWORD: process.env.REDIS_PASSWORD,
+
+  // Bull board
+  BULL_BOARD_USERNAME: process.env.BULL_BOARD_USERNAME || "admin",
+  BULL_BOARD_PASSWORD: process.env.BULL_BOARD_PASSWORD || "admin",
 };

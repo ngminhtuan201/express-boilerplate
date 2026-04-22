@@ -37,8 +37,8 @@ coverage/
 # TypeScript
 *.tsbuildinfo
 
-# Upload temp
-upload_temp
+# Upload
+.uploads
 
 # Local storage
-storages
+.storages

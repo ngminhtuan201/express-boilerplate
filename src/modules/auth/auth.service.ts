@@ -1,14 +1,12 @@
-import { config } from "../../config";
 import { UserRole } from "../../enums";
 import { errors } from "../../errors";
-import { signVerificationToken } from "../../libs";
+import { objectId, signVerificationToken } from "../../libs";
 import { User, UserModel } from "../../models";
 import { AuthToken } from "../../types";
-import { objectId } from "../../utils";
 import { authHelper } from "./auth.helper";
 import { ManualLoginDto, ManualRegisterDto } from "./dtos";
 
-const login = async (
+export const login = async (
   loginDto: ManualLoginDto,
 ): Promise<{ user: User; accessToken: AuthToken; refreshToken: AuthToken }> => {
   const { email, password } = loginDto;
@@ -40,7 +38,9 @@ const login = async (
   };
 };
 
-const register = async (registerDto: ManualRegisterDto): Promise<boolean> => {
+export const register = async (
+  registerDto: ManualRegisterDto,
+): Promise<boolean> => {
   const { email, password, fullName } = registerDto;
   const isEmailTaken = await authHelper.isEmailTaken(email);
   if (isEmailTaken) {
@@ -66,9 +66,4 @@ const register = async (registerDto: ManualRegisterDto): Promise<boolean> => {
   await UserModel.create(newUser);
 
   return true;
-};
-
-export const authService = {
-  login,
-  register,
 };

@@ -1,5 +1,5 @@
 export interface ISendEmailJob {
-  type: "verify-email" | "reset-password";
-  email: string;
-  replacements: Record<string, string>;
+  type: "verify" | "reset-password";
+  receiver: string;
+  payload: Record<string, string>;
 }

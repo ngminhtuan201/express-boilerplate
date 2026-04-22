@@ -1,13 +1,22 @@
 import express from "express";
 import passport from "passport";
 import { authenticate, validateRequestBody } from "../../middlewares";
-import { catchAsync } from "../../utils";
-import { authController } from "./auth.controller";
+import {
+  getMe,
+  handleGoogleCallback,
+  logout,
+  manualLogin,
+  manualRegister,
+  refreshToken,
+  updateProfile,
+  verifyEmail,
+} from "./auth.controller";
 import {
   manualLoginSchema,
   manualRegisterSchema,
   updateProfileSchema,
 } from "./dtos";
+
 export const authRouter = express.Router();
 
 authRouter.get(
@@ -17,25 +26,21 @@ authRouter.get(
 authRouter.get(
   "/google/callback",
   passport.authenticate("google", { session: false }),
-  catchAsync(authController.handleGoogleCallback),
+  handleGoogleCallback,
 );
-authRouter.post(
-  "/login",
-  validateRequestBody(manualLoginSchema),
-  catchAsync(authController.manualLogin),
-);
+authRouter.post("/login", validateRequestBody(manualLoginSchema), manualLogin);
 authRouter.post(
   "/register",
   validateRequestBody(manualRegisterSchema),
-  catchAsync(authController.manualRegister),
+  manualRegister,
 );
-authRouter.get("/verify-email", catchAsync(authController.verifyEmail));
-authRouter.post("/refresh-token", catchAsync(authController.refreshToken));
-authRouter.get("/me", authenticate(), catchAsync(authController.getMe));
+authRouter.get("/verify", verifyEmail);
+authRouter.post("/refresh-token", refreshToken);
+authRouter.get("/me", authenticate(), getMe);
 authRouter.put(
   "/me",
   authenticate(),
   validateRequestBody(updateProfileSchema),
-  catchAsync(authController.updateProfile),
+  updateProfile,
 );
-authRouter.post("/logout", catchAsync(authController.logout));
+authRouter.post("/logout", logout);

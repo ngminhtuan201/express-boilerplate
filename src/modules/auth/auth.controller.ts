@@ -3,20 +3,23 @@ import { Profile as GoogleProfile } from "passport-google-oauth20";
 import { config } from "../../config";
 import { UserOAuthProvider, UserRole } from "../../enums";
 import { errors } from "../../errors";
-import { verifyRefreshToken } from "../../libs";
+import {
+  catchAsync,
+  getCurrentUser,
+  handleSuccess,
+  objectId,
+  verifyRefreshToken,
+} from "../../libs";
 import { User, UserModel } from "../../models";
 import { AuthToken } from "../../types";
-import { getCurrentUser, handleSuccess, objectId } from "../../utils";
 import { authHelper } from "./auth.helper";
-import { authService } from "./auth.service";
+import { login, register } from "./auth.service";
 import { ManualLoginDto, ManualRegisterDto, UpdateProfileDto } from "./dtos";
 
 const isProduction = process.env.NODE_ENV === "production";
 
-const REFRESH_TOKEN_COOKIE_NAME = `${config.APP_NAME.toLowerCase()}_refresh_token`;
-
-const setRefreshTokenCookie = (res: Response, refreshToken: AuthToken) => {
-  res.cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken.token, {
+const setAuthCookie = async (res: Response, refreshToken: AuthToken) => {
+  res.cookie(config.COOKIE_AUTH, refreshToken.token, {
     httpOnly: true,
     secure: isProduction,
     sameSite: "lax",
@@ -25,59 +28,65 @@ const setRefreshTokenCookie = (res: Response, refreshToken: AuthToken) => {
   });
 };
 
-const handleGoogleCallback = async (req: Request, res: Response) => {
-  const googleProfile: GoogleProfile = req.user as GoogleProfile;
-  if (!googleProfile) {
-    throw errors.Unauthorized;
-  }
+export const handleGoogleCallback = catchAsync(
+  async (req: Request, res: Response) => {
+    const googleProfile: GoogleProfile = req.user as GoogleProfile;
+    if (!googleProfile) {
+      throw errors.Unauthorized;
+    }
 
-  let user = await UserModel.findOne({ email: googleProfile.emails[0].value });
-  if (!user) {
-    const newUser: User = {
-      _id: objectId(),
+    let user = await UserModel.findOne({
       email: googleProfile.emails[0].value,
-      emailVerified: googleProfile.emails[0].verified,
-      fullName: googleProfile.displayName,
-      avatarUrl: googleProfile.photos[0].value,
-      role: UserRole.USER,
+    });
+    if (!user) {
+      const newUser: User = {
+        _id: objectId(),
+        email: googleProfile.emails[0].value,
+        emailVerified: googleProfile.emails[0].verified,
+        fullName: googleProfile.displayName,
+        avatarUrl: googleProfile.photos[0].value,
+        role: UserRole.USER,
 
-      oauthId: googleProfile.id,
-      oauthProvider: UserOAuthProvider.GOOGLE,
-      oauthAvatarUrl: googleProfile.photos[0].value,
-    };
+        oauthId: googleProfile.id,
+        oauthProvider: UserOAuthProvider.GOOGLE,
+        oauthAvatarUrl: googleProfile.photos[0].value,
+      };
 
-    user = await UserModel.create(newUser);
-  }
+      user = await UserModel.create(newUser);
+    }
 
-  if (!user.emailVerified) {
-    throw errors.UnverifiedAccount;
-  }
+    if (!user.emailVerified) {
+      throw errors.UnverifiedAccount;
+    }
 
-  const jwtPayload = authHelper.extractJwtPayloadFromUser(user);
-  const { accessToken, refreshToken } =
-    authHelper.signResponseTokens(jwtPayload);
+    const jwtPayload = authHelper.extractJwtPayloadFromUser(user);
+    const { accessToken, refreshToken } =
+      authHelper.signResponseTokens(jwtPayload);
 
-  setRefreshTokenCookie(res, refreshToken);
+    setAuthCookie(res, refreshToken);
 
-  return handleSuccess(res, { accessToken, user });
-};
+    return handleSuccess(res, { accessToken, user });
+  },
+);
 
-const manualLogin = async (req: Request, res: Response) => {
-  const { user, accessToken, refreshToken } = await authService.login(
+export const manualLogin = catchAsync(async (req: Request, res: Response) => {
+  const { user, accessToken, refreshToken } = await login(
     req.body as ManualLoginDto,
   );
 
-  setRefreshTokenCookie(res, refreshToken);
+  setAuthCookie(res, refreshToken);
 
   return handleSuccess(res, { accessToken, user });
-};
+});
 
-const manualRegister = async (req: Request, res: Response) => {
-  await authService.register(req.body as ManualRegisterDto);
-  return handleSuccess(res, null);
-};
+export const manualRegister = catchAsync(
+  async (req: Request, res: Response) => {
+    await register(req.body as ManualRegisterDto);
+    return handleSuccess(res, null);
+  },
+);
 
-const verifyEmail = async (req: Request, res: Response) => {
+export const verifyEmail = catchAsync(async (req: Request, res: Response) => {
   const { token } = req.query;
 
   if (!token || typeof token !== "string") {
@@ -111,10 +120,10 @@ const verifyEmail = async (req: Request, res: Response) => {
   } catch (error) {
     throw errors.Unauthorized;
   }
-};
+});
 
-const refreshToken = async (req: Request, res: Response) => {
-  const refreshTokenCookie = req.cookies[REFRESH_TOKEN_COOKIE_NAME];
+export const refreshToken = catchAsync(async (req: Request, res: Response) => {
+  const refreshTokenCookie = req.cookies[config.COOKIE_AUTH];
   if (!refreshTokenCookie) {
     throw errors.Unauthorized;
   }
@@ -130,24 +139,25 @@ const refreshToken = async (req: Request, res: Response) => {
     const { accessToken, refreshToken } =
       authHelper.signResponseTokens(jwtPayload);
 
-    setRefreshTokenCookie(res, refreshToken);
+    setAuthCookie(res, refreshToken);
 
     return handleSuccess(res, { accessToken });
   } catch (error) {
     throw errors.Unauthorized;
   }
-};
+});
 
-const logout = (_req: Request, res: Response) => {
-  res.clearCookie(REFRESH_TOKEN_COOKIE_NAME);
+export const logout = catchAsync((_req: Request, res: Response) => {
+  // TODO: Revoke/Disable tokens
+  res.clearCookie(config.COOKIE_AUTH);
   return handleSuccess(res, null);
-};
+});
 
-const getMe = (req: Request, res: Response) => {
+export const getMe = catchAsync((req: Request, res: Response) => {
   return handleSuccess(res, { user: getCurrentUser(req) });
-};
+});
 
-const updateProfile = async (req: Request, res: Response) => {
+export const updateProfile = catchAsync(async (req: Request, res: Response) => {
   const currentUser = getCurrentUser(req);
   const dto = req.body as UpdateProfileDto;
 
@@ -158,15 +168,4 @@ const updateProfile = async (req: Request, res: Response) => {
   );
 
   return handleSuccess(res, { user: updatedUser });
-};
-
-export const authController = {
-  handleGoogleCallback,
-  manualLogin,
-  manualRegister,
-  verifyEmail,
-  refreshToken,
-  logout,
-  getMe,
-  updateProfile,
-};
+});
