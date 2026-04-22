@@ -5,6 +5,7 @@ import { User, UserModel } from "../../models";
 import { AuthToken } from "../../types";
 import { authHelper } from "./auth.helper";
 import { ManualLoginDto, ManualRegisterDto } from "./dtos";
+import { addSendEmailJob } from "../../worker/modules/emails/send-email.queue";
 
 export const login = async (
   loginDto: ManualLoginDto,
@@ -66,6 +67,14 @@ export const register = async (
   };
 
   await UserModel.create(newUser);
+
+  addSendEmailJob({
+    type: "verify",
+    receiver: newUser.email,
+    payload: {
+      token: verificationToken,
+    },
+  });
 
   return true;
 };

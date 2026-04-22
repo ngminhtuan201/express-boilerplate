@@ -46,7 +46,7 @@ class ServerApp {
     try {
       // TODO: Add origin domains
       // Cors
-      const corsOrigins = ["http://localhost:3000"];
+      const corsOrigins = config.CORS_ORIGINS;
       this.app.use(cors({ origin: corsOrigins, credentials: true }));
 
       this.app.use(cookieParser());

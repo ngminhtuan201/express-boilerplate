@@ -13,7 +13,7 @@ async function seed() {
 
     const adminEmail = "admin@example.com";
     const existingAdmin = await UserModel.findOne({ email: adminEmail });
-    
+
     if (existingAdmin) {
       console.log("Admin user already exists. Skipping seeder.");
     } else {

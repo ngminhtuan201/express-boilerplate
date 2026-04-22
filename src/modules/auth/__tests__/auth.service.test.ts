@@ -57,42 +57,59 @@ describe("Auth Service", () => {
         }),
       });
 
-      await expect(login(mockLoginDto)).rejects.toThrow(errors.InvalidCredentials);
+      await expect(login(mockLoginDto)).rejects.toThrow(
+        errors.InvalidCredentials,
+      );
     });
 
     it("should throw InvalidCredentials if user has oauthProvider (no password)", async () => {
       (UserModel.findOne as jest.Mock).mockReturnValue({
         lean: jest.fn().mockReturnValue({
-          exec: jest.fn().mockResolvedValue({ ...mockUser, oauthProvider: "google" }),
+          exec: jest
+            .fn()
+            .mockResolvedValue({ ...mockUser, oauthProvider: "google" }),
         }),
       });
 
-      await expect(login(mockLoginDto)).rejects.toThrow(errors.InvalidCredentials);
+      await expect(login(mockLoginDto)).rejects.toThrow(
+        errors.InvalidCredentials,
+      );
     });
 
     it("should throw InvalidCredentials if password does not match", async () => {
       (authHelper.comparePassword as jest.Mock).mockReturnValue(false);
 
-      await expect(login(mockLoginDto)).rejects.toThrow(errors.InvalidCredentials);
-      expect(authHelper.comparePassword).toHaveBeenCalledWith("Password123!", "hashed_password");
+      await expect(login(mockLoginDto)).rejects.toThrow(
+        errors.InvalidCredentials,
+      );
+      expect(authHelper.comparePassword).toHaveBeenCalledWith(
+        "Password123!",
+        "hashed_password",
+      );
     });
 
     it("should throw UnverifiedAccount if email is not verified", async () => {
       (authHelper.comparePassword as jest.Mock).mockReturnValue(true);
       (UserModel.findOne as jest.Mock).mockReturnValue({
         lean: jest.fn().mockReturnValue({
-          exec: jest.fn().mockResolvedValue({ ...mockUser, emailVerified: false }),
+          exec: jest
+            .fn()
+            .mockResolvedValue({ ...mockUser, emailVerified: false }),
         }),
       });
 
-      await expect(login(mockLoginDto)).rejects.toThrow(errors.UnverifiedAccount);
+      await expect(login(mockLoginDto)).rejects.toThrow(
+        errors.UnverifiedAccount,
+      );
     });
 
     it("should return user and tokens on successful login", async () => {
       (authHelper.comparePassword as jest.Mock).mockReturnValue(true);
       const mockPayload = { userId: "123" };
-      (authHelper.extractJwtPayloadFromUser as jest.Mock).mockReturnValue(mockPayload);
-      
+      (authHelper.extractJwtPayloadFromUser as jest.Mock).mockReturnValue(
+        mockPayload,
+      );
+
       const mockTokens = {
         accessToken: { token: "access", expiresAt: new Date() },
         refreshToken: { token: "refresh", expiresAt: new Date() },
@@ -104,7 +121,9 @@ describe("Auth Service", () => {
       expect(result.user).toEqual(mockUser);
       expect(result.accessToken).toEqual(mockTokens.accessToken);
       expect(result.refreshToken).toEqual(mockTokens.refreshToken);
-      expect(authHelper.extractJwtPayloadFromUser).toHaveBeenCalledWith(mockUser);
+      expect(authHelper.extractJwtPayloadFromUser).toHaveBeenCalledWith(
+        mockUser,
+      );
       expect(authHelper.signResponseTokens).toHaveBeenCalledWith(mockPayload);
     });
   });
@@ -119,8 +138,12 @@ describe("Auth Service", () => {
     it("should throw EmailTaken if email already exists", async () => {
       (authHelper.isEmailTaken as jest.Mock).mockResolvedValue(true);
 
-      await expect(register(mockRegisterDto)).rejects.toThrow(errors.EmailTaken);
-      expect(authHelper.isEmailTaken).toHaveBeenCalledWith(mockRegisterDto.email);
+      await expect(register(mockRegisterDto)).rejects.toThrow(
+        errors.EmailTaken,
+      );
+      expect(authHelper.isEmailTaken).toHaveBeenCalledWith(
+        mockRegisterDto.email,
+      );
     });
 
     it("should create user and return true on success", async () => {
@@ -132,8 +155,10 @@ describe("Auth Service", () => {
       const result = await register(mockRegisterDto);
 
       expect(result).toBe(true);
-      expect(authHelper.hashPassword).toHaveBeenCalledWith(mockRegisterDto.password);
-      
+      expect(authHelper.hashPassword).toHaveBeenCalledWith(
+        mockRegisterDto.password,
+      );
+
       expect(UserModel.create).toHaveBeenCalledWith(
         expect.objectContaining({
           id: "new-user-id",
@@ -143,7 +168,7 @@ describe("Auth Service", () => {
           role: UserRole.USER,
           hashedPassword: "hashed-pw",
           verificationToken: "verify-token",
-        })
+        }),
       );
     });
   });

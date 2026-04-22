@@ -18,6 +18,9 @@ export const config = {
 
   // Web client
   WEB_CLIENT_URL: process.env.WEB_CLIENT_URL || "http://localhost:3000",
+  CORS_ORIGINS: process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(",")
+    : ["http://localhost:3000"],
 
   // Verification
   VERIFICATION_TOKEN_EXPIRY_MINUTES: +process.env.VERIFICATION_TOKEN_EXPIRY_MINUTES || 30, // prettier-ignore
