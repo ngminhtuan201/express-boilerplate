@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import httpStatus from "http-status";
 import mongoose from "mongoose";
+import { nanoid } from "nanoid";
 import { User } from "../models";
 
 export const catchAsync =
@@ -24,6 +25,8 @@ export const handleSuccess = (
 
 export const objectId = (id?: string): mongoose.Types.ObjectId =>
   new mongoose.Types.ObjectId(id);
+
+export const documentId = (): string => nanoid();
 
 const DEFAULT_PAGE_SIZE = 25;
 const DEFAULT_PAGE_NUMBER = 1;

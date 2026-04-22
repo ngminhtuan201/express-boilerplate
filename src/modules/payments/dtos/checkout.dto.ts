@@ -1,7 +1,7 @@
 import Joi from "joi";
 import { Currency, PaymentProvider } from "../../../enums";
 
-export type CreateCheckoutDto = {
+export type CheckoutDto = {
   amount: number;
   currency: Currency;
   provider: PaymentProvider;
@@ -9,7 +9,7 @@ export type CreateCheckoutDto = {
   metadata?: Record<string, string>;
 };
 
-export const createCheckoutSchema = Joi.object<CreateCheckoutDto>({
+export const checkoutSchema = Joi.object<CheckoutDto>({
   amount: Joi.number().min(0).required(),
   currency: Joi.string()
     .valid(...Object.values(Currency))

@@ -1,6 +1,6 @@
 import { UserRole } from "../../enums";
 import { errors } from "../../errors";
-import { objectId, signVerificationToken } from "../../libs";
+import { documentId, signVerificationToken } from "../../libs";
 import { User, UserModel } from "../../models";
 import { AuthToken } from "../../types";
 import { authHelper } from "./auth.helper";
@@ -10,9 +10,11 @@ export const login = async (
   loginDto: ManualLoginDto,
 ): Promise<{ user: User; accessToken: AuthToken; refreshToken: AuthToken }> => {
   const { email, password } = loginDto;
-  const user = await UserModel.findOne({
+  const user = (await UserModel.findOne({
     email: email,
-  });
+  })
+    .lean()
+    .exec()) as User;
 
   if (
     !user ||
@@ -47,13 +49,13 @@ export const register = async (
     throw errors.EmailTaken;
   }
 
-  const newUserId = objectId();
+  const newUserId = documentId();
   const verificationToken = signVerificationToken({
-    userId: newUserId.toString(),
+    userId: newUserId,
   });
 
   const newUser: User = {
-    _id: objectId(),
+    id: newUserId,
     email: email.trim().toLowerCase(),
     emailVerified: false,
     fullName: fullName,

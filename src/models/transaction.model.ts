@@ -7,10 +7,9 @@ import {
   TransactionType,
 } from "../enums";
 import { BaseModel } from "./base";
-import { UserModel } from "./user.model";
 
 export interface Transaction extends BaseModel {
-  userId: mongoose.Schema.Types.ObjectId;
+  userId: string;
   type: TransactionType;
   description?: string;
   amount: number;
@@ -24,9 +23,12 @@ export interface Transaction extends BaseModel {
 
 const transactionSchema = new mongoose.Schema<Transaction>(
   {
+    id: {
+      type: String,
+      unique: true,
+    },
     userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: UserModel.name,
+      type: String,
       required: true,
     },
     type: {

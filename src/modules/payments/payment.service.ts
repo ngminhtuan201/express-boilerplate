@@ -1,91 +1,113 @@
-import { Currency, PaymentProvider, TransactionStatus, TransactionType } from "../../enums";
-import { TransactionModel } from "../../models/transaction.model";
+import {
+  PaymentProvider,
+  TransactionStatus,
+  TransactionType,
+} from "../../enums";
+import { documentId } from "../../libs";
+import { Transaction, TransactionModel } from "../../models";
+import { CheckoutDto } from "./dtos";
 import { PaymentAdapterFactory } from "./payment.helper";
 
-export class PaymentService {
-  async createCheckoutSession(
-    userId: string,
-    amount: number,
-    currency: Currency,
-    provider: PaymentProvider,
-    description?: string,
-    metadata?: Record<string, string>
-  ) {
-    const transaction = await TransactionModel.create({
-      userId,
-      type: TransactionType.PURCHASE,
+export const checkout = async (userId: string, dto: CheckoutDto) => {
+  const { amount, currency, provider, description, metadata } = dto;
+
+  try {
+    const paymentAdapter = PaymentAdapterFactory.getAdapter(provider);
+    const transactionId = documentId();
+    const paymentResponse = await paymentAdapter.createPaymentIntent(
       amount,
       currency,
-      status: TransactionStatus.PENDING,
-      provider,
-      description,
+      transactionId,
       metadata,
-    });
-
-    const adapter = PaymentAdapterFactory.getAdapter(provider);
-
-    const paymentResponse = await adapter.createPaymentIntent(
-      amount,
-      currency,
-      transaction._id.toString(),
-      metadata
     );
 
     if (paymentResponse.providerRefId) {
-      transaction.providerRefId = paymentResponse.providerRefId;
-      await transaction.save();
+      const newTransaction: Transaction = {
+        id: documentId(),
+        userId,
+        type: TransactionType.PURCHASE,
+        amount,
+        currency,
+        status: TransactionStatus.PENDING,
+        provider,
+        providerRefId: paymentResponse.providerRefId,
+        description,
+        metadata,
+      };
+
+      await TransactionModel.create(newTransaction);
     }
 
     return paymentResponse;
+  } catch (err: any) {
+    throw new Error(`Checkout Error: ${err.message}`);
   }
+};
 
-  async handleStripeWebhook(payload: any, signature: string) {
-    const adapter = PaymentAdapterFactory.getAdapter(PaymentProvider.STRIPE);
-    try {
-      const event = adapter.verifyWebhookSignature(payload, signature);
-      
-      if (event.type === 'payment_intent.succeeded') {
-        const paymentIntent = event.data.object;
-        const transactionId = paymentIntent.metadata.orderId;
-        
-        if (transactionId) {
-          await TransactionModel.findByIdAndUpdate(transactionId, {
-            status: TransactionStatus.SUCCESS,
-            providerRefId: paymentIntent.id
-          });
-        }
-      } else if (event.type === 'payment_intent.payment_failed') {
-         const paymentIntent = event.data.object;
-         const transactionId = paymentIntent.metadata.orderId;
-         if (transactionId) {
-           await TransactionModel.findByIdAndUpdate(transactionId, {
-             status: TransactionStatus.FAILED
-           });
-         }
-      }
-      return { received: true };
-    } catch (err: any) {
-      throw new Error(`Stripe Webhook Error: ${err.message}`);
-    }
-  }
+export const handleStripeWebhook = async (payload: any, signature: string) => {
+  const stripeAdapter = PaymentAdapterFactory.getAdapter(
+    PaymentProvider.STRIPE,
+  );
 
-  async handleSepayWebhook(payload: any, signature: string) {
-    const adapter = PaymentAdapterFactory.getAdapter(PaymentProvider.SEPAY);
-    try {
-      const verifiedPayload = adapter.verifyWebhookSignature(payload, signature);
-      
-      const transactionId = verifiedPayload.order_invoice_number;
+  try {
+    const event = stripeAdapter.verifyWebhookSignature(payload, signature);
+
+    if (event.type === "payment_intent.succeeded") {
+      const paymentIntent = event.data.object;
+      const transactionId = paymentIntent.metadata.orderId;
       if (transactionId) {
-        await TransactionModel.findByIdAndUpdate(transactionId, {
-          status: TransactionStatus.SUCCESS,
-        });
+        await TransactionModel.findOneAndUpdate(
+          { id: transactionId },
+          {
+            $set: {
+              status: TransactionStatus.SUCCESS,
+              providerRefId: paymentIntent.id,
+            },
+          },
+          { new: true },
+        );
       }
-      
-      return { received: true };
-    } catch (err: any) {
-      throw new Error(`Sepay Webhook Error: ${err.message}`);
+    } else if (event.type === "payment_intent.payment_failed") {
+      const paymentIntent = event.data.object;
+      const transactionId = paymentIntent.metadata.orderId;
+      if (transactionId) {
+        await TransactionModel.findOneAndUpdate(
+          { id: transactionId },
+          { $set: { status: TransactionStatus.FAILED } },
+          { new: true },
+        );
+      }
     }
-  }
-}
 
-export const paymentService = new PaymentService();
+    return { received: true };
+  } catch (err: any) {
+    throw new Error(`Stripe Webhook Error: ${err.message}`);
+  }
+};
+
+export const handleSepayWebhook = async (
+  payload: any,
+  signature: string,
+): Promise<{ received: boolean }> => {
+  const sepayAdapter = PaymentAdapterFactory.getAdapter(PaymentProvider.SEPAY);
+
+  try {
+    const verifiedPayload = sepayAdapter.verifyWebhookSignature(
+      payload,
+      signature,
+    );
+
+    const transactionId = verifiedPayload.order_invoice_number;
+    if (transactionId) {
+      await TransactionModel.findOneAndUpdate(
+        { id: transactionId },
+        { $set: { status: TransactionStatus.SUCCESS } },
+        { new: true },
+      );
+    }
+
+    return { received: true };
+  } catch (err: any) {
+    throw new Error(`Sepay Webhook Error: ${err.message}`);
+  }
+};

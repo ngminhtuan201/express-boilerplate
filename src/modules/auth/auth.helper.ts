@@ -25,7 +25,7 @@ export const comparePassword = (
 
 export const extractJwtPayloadFromUser = (user: User): JwtPayload => {
   return {
-    userId: String(user._id),
+    userId: user.id,
   };
 };
 

@@ -1,7 +1,5 @@
-import mongoose from "mongoose";
-
 export class BaseModel {
-  _id: mongoose.Types.ObjectId;
+  id: string;
   createdAt?: Date;
   updatedAt?: Date;
 }

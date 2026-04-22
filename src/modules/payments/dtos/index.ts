@@ -1,1 +1,1 @@
-export * from "./create-checkout.dto";
+export * from "./checkout.dto";

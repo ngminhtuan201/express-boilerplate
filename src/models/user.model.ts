@@ -20,6 +20,10 @@ export interface User extends BaseModel {
 
 const userSchema = new mongoose.Schema(
   {
+    id: {
+      type: String,
+      unique: true,
+    },
     email: { type: String, unique: true, required: true },
     emailVerified: { type: Boolean, default: false, required: true },
     fullName: { type: String, required: true },

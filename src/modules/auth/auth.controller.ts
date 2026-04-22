@@ -5,9 +5,9 @@ import { UserOAuthProvider, UserRole } from "../../enums";
 import { errors } from "../../errors";
 import {
   catchAsync,
+  documentId,
   getCurrentUser,
   handleSuccess,
-  objectId,
   verifyRefreshToken,
 } from "../../libs";
 import { User, UserModel } from "../../models";
@@ -35,24 +35,26 @@ export const handleGoogleCallback = catchAsync(
       throw errors.Unauthorized;
     }
 
-    let user = await UserModel.findOne({
+    let user = (await UserModel.findOne({
       email: googleProfile.emails[0].value,
-    });
+    })
+      .lean()
+      .exec()) as User;
+
     if (!user) {
-      const newUser: User = {
-        _id: objectId(),
+      user = {
+        id: documentId(),
         email: googleProfile.emails[0].value,
         emailVerified: googleProfile.emails[0].verified,
         fullName: googleProfile.displayName,
         avatarUrl: googleProfile.photos[0].value,
         role: UserRole.USER,
-
         oauthId: googleProfile.id,
         oauthProvider: UserOAuthProvider.GOOGLE,
         oauthAvatarUrl: googleProfile.photos[0].value,
       };
 
-      user = await UserModel.create(newUser);
+      await UserModel.create(user);
     }
 
     if (!user.emailVerified) {
@@ -106,7 +108,7 @@ export const verifyEmail = catchAsync(async (req: Request, res: Response) => {
     }
 
     await UserModel.updateOne(
-      { _id: user._id },
+      { id: user.id },
       {
         $set: {
           emailVerified: true,
@@ -130,7 +132,10 @@ export const refreshToken = catchAsync(async (req: Request, res: Response) => {
 
   try {
     const payload = verifyRefreshToken(refreshTokenCookie);
-    const user = await UserModel.findOne({ _id: objectId(payload.userId) });
+    const user = (await UserModel.findOne({ id: payload.userId })
+      .lean()
+      .exec()) as User;
+
     if (!user) {
       throw errors.Unauthorized;
     }
@@ -161,8 +166,8 @@ export const updateProfile = catchAsync(async (req: Request, res: Response) => {
   const currentUser = getCurrentUser(req);
   const dto = req.body as UpdateProfileDto;
 
-  const updatedUser = await UserModel.findByIdAndUpdate(
-    currentUser._id,
+  const updatedUser = await UserModel.findOneAndUpdate(
+    { id: currentUser.id },
     { $set: dto },
     { new: true },
   );
