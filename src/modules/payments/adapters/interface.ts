@@ -1,9 +1,21 @@
+import { Currency, PaymentProvider } from "../../../enums";
+
+export interface UnifiedPaymentResponse {
+  provider: PaymentProvider;
+  transactionId: string;
+  providerRefId?: string;
+  checkoutUrl?: string;
+  checkoutFormData?: Record<string, any>;
+  clientSecret?: string;
+}
+
 export interface IPaymentAdapter {
   createPaymentIntent(
     amount: number,
-    currency: string,
-    metadata?: Record<string, any>,
-  ): Promise<{ id: string; client_secret: string | null }>;
+    currency: Currency,
+    orderId: string,
+    metadata?: Record<string, string>,
+  ): Promise<UnifiedPaymentResponse>;
 
-  constructEvent(payload: any, signature: string | string[]): any;
+  verifyWebhookSignature(payload: any, signature: string | string[]): any;
 }

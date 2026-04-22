@@ -2,3 +2,24 @@ export enum PaymentProvider {
   STRIPE = "stripe",
   SEPAY = "sepay",
 }
+
+export enum PaymentMethod {
+  CREDIT_CARD = "credit_card",
+  BANK_TRANSFER = "bank_transfer",
+}
+
+export enum TransactionStatus {
+  PENDING = "pending",
+  SUCCESS = "success",
+  FAILED = "failed",
+  CANCELED = "canceled",
+}
+
+export enum TransactionType {
+  PURCHASE = "purchase",
+}
+
+export enum Currency {
+  VND = "vnd",
+  USD = "usd",
+}

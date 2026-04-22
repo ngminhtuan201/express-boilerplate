@@ -1,8 +1,9 @@
 import Stripe from "stripe";
 import { config } from "../../../config";
-import { IPaymentAdapter } from "./interface";
+import { Currency, PaymentProvider } from "../../../enums";
+import { IPaymentAdapter, UnifiedPaymentResponse } from "./interface";
 
-export class StripeAdapter implements IPaymentAdapter {
+export class StripePaymentAdapter implements IPaymentAdapter {
   private stripe: Stripe;
 
   constructor() {
@@ -11,23 +12,29 @@ export class StripeAdapter implements IPaymentAdapter {
 
   async createPaymentIntent(
     amount: number,
-    currency: string = "usd",
-    metadata: Record<string, any> = {},
-  ) {
-    return this.stripe.paymentIntents.create({
+    currency: Currency = Currency.USD,
+    orderId: string,
+    metadata: Record<string, string> = {},
+  ): Promise<UnifiedPaymentResponse> {
+    const paymentIntent = await this.stripe.paymentIntents.create({
       amount: Math.round(amount * 100), // Stripe expects amount in cents
       currency,
-      metadata,
+      metadata: { ...metadata, orderId },
     });
+
+    return {
+      provider: PaymentProvider.STRIPE,
+      transactionId: orderId,
+      providerRefId: paymentIntent.id,
+      clientSecret: paymentIntent.client_secret,
+    };
   }
 
-  constructEvent(payload: any, signature: string) {
+  verifyWebhookSignature(payload: any, signature: string | string[]) {
     return this.stripe.webhooks.constructEvent(
       payload,
-      signature,
+      signature as string,
       config.STRIPE_WEBHOOK_SECRET,
     );
   }
 }
-
-export const stripeAdapter = new StripeAdapter();

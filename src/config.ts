@@ -52,6 +52,11 @@ export const config = {
   STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
   STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
 
+  // Sepay
+  SEPAY_MERCHANT_ID: process.env.SEPAY_MERCHANT_ID,
+  SEPAY_SECRET_KEY: process.env.SEPAY_SECRET_KEY,
+  SEPAY_WEBHOOK_URL: process.env.SEPAY_WEBHOOK_URL,
+
   // Storage
   STORAGE_PROVIDER: process.env.STORAGE_PROVIDER || "local",
 

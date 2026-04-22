@@ -57,7 +57,11 @@ class ServerApp {
         }),
       );
       this.app.use(express.urlencoded({ extended: true }));
-      this.app.use(express.json());
+      this.app.use(express.json({
+        verify: (req: any, res, buf) => {
+          req.rawBody = buf;
+        }
+      }));
 
       // Static files
       this.app.use(
