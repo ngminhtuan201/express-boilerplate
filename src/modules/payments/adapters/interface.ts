@@ -1,21 +1,24 @@
-import { Currency, PaymentProvider } from "../../../enums";
+import { PaymentProvider } from "src/enums";
+import { CreatePaymentDto } from "../dtos";
 
-export interface UnifiedPaymentResponse {
+export interface PaymentSession {
   provider: PaymentProvider;
-  transactionId: string;
-  providerRefId?: string;
+  providerRefId: string;
   checkoutUrl?: string;
-  checkoutFormData?: Record<string, any>;
-  clientSecret?: string;
+  /**
+   * Raw payment response from provider.
+   */
+  raw?: unknown;
 }
 
 export interface IPaymentAdapter {
-  createPaymentIntent(
-    amount: number,
-    currency: Currency,
-    orderId: string,
-    metadata?: Record<string, string>,
-  ): Promise<UnifiedPaymentResponse>;
+  createPaymentSession(
+    transactionId: string,
+    dto: CreatePaymentDto,
+  ): Promise<PaymentSession>;
 
-  verifyWebhookSignature(payload: any, signature: string | string[]): any;
+  handleWebhook(
+    payload: unknown,
+    headers: Record<string, string | string[] | undefined>,
+  ): Promise<{ received: boolean }>;
 }

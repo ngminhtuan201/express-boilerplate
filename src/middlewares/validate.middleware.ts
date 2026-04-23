@@ -31,7 +31,7 @@ export const validateRequest = (schemas: {
   params?: Joi.ObjectSchema;
 }) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    const errors: any[] = [];
+    const errors: { message: string; path: string }[] = [];
 
     if (schemas.body) {
       const { error, value } = schemas.body.validate(req.body, {

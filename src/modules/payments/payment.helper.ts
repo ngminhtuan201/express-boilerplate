@@ -1,9 +1,5 @@
 import { PaymentProvider } from "../../enums";
-import {
-  IPaymentAdapter,
-  SepayPaymentAdapter,
-  StripePaymentAdapter,
-} from "./adapters";
+import { IPaymentAdapter, StripePaymentAdapter } from "./adapters";
 
 export class PaymentAdapterFactory {
   private static adapters: Map<string, IPaymentAdapter> = new Map();
@@ -15,9 +11,6 @@ export class PaymentAdapterFactory {
       switch (provider) {
         case PaymentProvider.STRIPE:
           this.adapters.set(PaymentProvider.STRIPE, new StripePaymentAdapter());
-          break;
-        case PaymentProvider.SEPAY:
-          this.adapters.set(PaymentProvider.SEPAY, new SepayPaymentAdapter());
           break;
         default:
           throw new Error(`Payment provider ${provider} not supported`);

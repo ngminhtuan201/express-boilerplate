@@ -60,8 +60,8 @@ class ServerApp {
       this.app.use(express.urlencoded({ extended: true }));
       this.app.use(
         express.json({
-          verify: (req: any, res, buf) => {
-            req.rawBody = buf;
+          verify: (req, _res, buf) => {
+            req["rawBody"] = buf;
           },
         }),
       );
@@ -155,29 +155,32 @@ class ServerApp {
       });
 
       this.app.post("/admin/queues/login", (req, res, next) => {
-        passport.authenticate("local", (err: any, user: any, _info: any) => {
-          if (err) {
-            return next(err);
-          }
-
-          if (!user) {
-            return res.redirect("/admin/queues/login");
-          }
-
-          req.login(user, (err) => {
+        passport.authenticate(
+          "local",
+          (err: Error, user: unknown, _info: unknown) => {
             if (err) {
               return next(err);
             }
 
-            req.session.save((err) => {
+            if (!user) {
+              return res.redirect("/admin/queues/login");
+            }
+
+            req.login(user, (err) => {
               if (err) {
                 return next(err);
               }
 
-              res.redirect("/admin/queues");
+              req.session.save((err) => {
+                if (err) {
+                  return next(err);
+                }
+
+                res.redirect("/admin/queues");
+              });
             });
-          });
-        })(req, res, next);
+          },
+        )(req, res, next);
       });
 
       this.app.use(

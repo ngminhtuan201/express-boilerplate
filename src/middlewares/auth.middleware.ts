@@ -2,7 +2,6 @@ import { NextFunction, Request, RequestHandler, Response } from "express";
 import passport from "passport";
 import { UserRole } from "../enums";
 import { errors } from "../errors";
-import { User } from "../models";
 
 export const authenticate = (
   allowedRoles?: Array<UserRole>,
@@ -11,7 +10,7 @@ export const authenticate = (
     passport.authenticate(
       "jwt",
       { session: false },
-      (error: Error, user: User, _info: unknown) => {
+      (error: Error, user: unknown, _info: unknown) => {
         if (error || !user) {
           next(errors.Unauthorized);
           return;

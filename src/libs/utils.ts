@@ -5,7 +5,7 @@ import { nanoid } from "nanoid";
 import { User } from "../models";
 
 export const catchAsync =
-  (fn: (...args: any[]) => any) =>
+  (fn: (...args: unknown[]) => unknown) =>
   (req: Request, res: Response, next: NextFunction): void => {
     Promise.resolve(fn(req, res, next)).catch((err) => next(err));
   };
@@ -80,20 +80,12 @@ export function getSortField(
   req: Request,
   fallbackField = "createdAt",
 ): string | null {
-  try {
-    return String(req.query?.sortField || "").trim() || fallbackField;
-  } catch (error) {
-    return fallbackField;
-  }
+  return String(req.query?.sortField || "").trim() || fallbackField;
 }
 
 export function getSortOrder(
   req: Request,
   fallbackOrder = "desc",
 ): string | null {
-  try {
-    return String(req.query?.sortOrder || "").trim() || fallbackOrder;
-  } catch (error) {
-    return fallbackOrder;
-  }
+  return String(req.query?.sortOrder || "").trim() || fallbackOrder;
 }

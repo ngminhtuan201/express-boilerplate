@@ -89,39 +89,36 @@ export const manualRegister = catchAsync(
 );
 
 export const verifyEmail = catchAsync(async (req: Request, res: Response) => {
-  const { token } = req.query;
-
-  if (!token || typeof token !== "string") {
+  const token = req.query.token as string;
+  if (!token) {
     throw errors.Unauthorized;
   }
 
-  try {
-    const payload = authHelper.verifyVerificationToken(token);
-    const user = await UserModel.findOne({ id: payload.userId });
+  const payload = authHelper.verifyVerificationToken(token);
+  const user = (await UserModel.findOne({ id: payload.userId })
+    .lean()
+    .exec()) as User;
 
-    if (!user) {
-      throw errors.Unauthorized;
-    }
+  if (!user) {
+    throw errors.Unauthorized;
+  }
 
-    if (user.emailVerified) {
-      return handleSuccess(res, null);
-    }
-
-    await UserModel.updateOne(
-      { id: user.id },
-      {
-        $set: {
-          emailVerified: true,
-          verificationToken: undefined,
-          verificationTokenExpiry: undefined,
-        },
-      },
-    );
-
+  if (user.emailVerified) {
     return handleSuccess(res, null);
-  } catch (error) {
-    throw errors.Unauthorized;
   }
+
+  await UserModel.updateOne(
+    { id: user.id },
+    {
+      $set: {
+        emailVerified: true,
+        verificationToken: undefined,
+        verificationTokenExpiry: undefined,
+      },
+    },
+  );
+
+  return handleSuccess(res, null);
 });
 
 export const refreshToken = catchAsync(async (req: Request, res: Response) => {
@@ -130,26 +127,22 @@ export const refreshToken = catchAsync(async (req: Request, res: Response) => {
     throw errors.Unauthorized;
   }
 
-  try {
-    const payload = verifyRefreshToken(refreshTokenCookie);
-    const user = (await UserModel.findOne({ id: payload.userId })
-      .lean()
-      .exec()) as User;
+  const payload = verifyRefreshToken(refreshTokenCookie);
+  const user = (await UserModel.findOne({ id: payload.userId })
+    .lean()
+    .exec()) as User;
 
-    if (!user) {
-      throw errors.Unauthorized;
-    }
-
-    const jwtPayload = authHelper.extractJwtPayloadFromUser(user);
-    const { accessToken, refreshToken } =
-      authHelper.signResponseTokens(jwtPayload);
-
-    setAuthCookie(res, refreshToken);
-
-    return handleSuccess(res, { accessToken });
-  } catch (error) {
+  if (!user) {
     throw errors.Unauthorized;
   }
+
+  const jwtPayload = authHelper.extractJwtPayloadFromUser(user);
+  const { accessToken, refreshToken } =
+    authHelper.signResponseTokens(jwtPayload);
+
+  setAuthCookie(res, refreshToken);
+
+  return handleSuccess(res, { accessToken });
 });
 
 export const logout = catchAsync((_req: Request, res: Response) => {

@@ -5,109 +5,45 @@ import {
 } from "../../enums";
 import { documentId } from "../../libs";
 import { Transaction, TransactionModel } from "../../models";
-import { CheckoutDto } from "./dtos";
+import { PaymentSession } from "./adapters";
+import { CreatePaymentDto } from "./dtos";
 import { PaymentAdapterFactory } from "./payment.helper";
 
-export const checkout = async (userId: string, dto: CheckoutDto) => {
-  const { amount, currency, provider, description, metadata } = dto;
+export const createPaymentSession = async (
+  userId: string,
+  provider: PaymentProvider,
+  dto: CreatePaymentDto,
+): Promise<PaymentSession> => {
+  const paymentAdapter = PaymentAdapterFactory.getAdapter(provider);
 
-  try {
-    const paymentAdapter = PaymentAdapterFactory.getAdapter(provider);
-    const transactionId = documentId();
-    const paymentResponse = await paymentAdapter.createPaymentIntent(
-      amount,
-      currency,
-      transactionId,
-      metadata,
-    );
-
-    if (paymentResponse.providerRefId) {
-      const newTransaction: Transaction = {
-        id: documentId(),
-        userId,
-        type: TransactionType.PURCHASE,
-        amount,
-        currency,
-        status: TransactionStatus.PENDING,
-        provider,
-        providerRefId: paymentResponse.providerRefId,
-        description,
-        metadata,
-      };
-
-      await TransactionModel.create(newTransaction);
-    }
-
-    return paymentResponse;
-  } catch (err: any) {
-    throw new Error(`Checkout Error: ${err.message}`);
-  }
-};
-
-export const handleStripeWebhook = async (payload: any, signature: string) => {
-  const stripeAdapter = PaymentAdapterFactory.getAdapter(
-    PaymentProvider.STRIPE,
+  const transactionId = documentId();
+  const paymentSession = await paymentAdapter.createPaymentSession(
+    transactionId,
+    dto,
   );
 
-  try {
-    const event = stripeAdapter.verifyWebhookSignature(payload, signature);
+  const newTransaction: Transaction = {
+    id: transactionId,
+    userId: userId,
+    type: TransactionType.PURCHASE,
+    amount: dto.amount,
+    currency: dto.currency,
+    status: TransactionStatus.PENDING,
+    provider: provider,
+    providerRefId: paymentSession.providerRefId,
+    metadata: (paymentSession.raw as Record<string, unknown>) || {},
+  };
 
-    if (event.type === "payment_intent.succeeded") {
-      const paymentIntent = event.data.object;
-      const transactionId = paymentIntent.metadata.orderId;
-      if (transactionId) {
-        await TransactionModel.findOneAndUpdate(
-          { id: transactionId },
-          {
-            $set: {
-              status: TransactionStatus.SUCCESS,
-              providerRefId: paymentIntent.id,
-            },
-          },
-          { new: true },
-        );
-      }
-    } else if (event.type === "payment_intent.payment_failed") {
-      const paymentIntent = event.data.object;
-      const transactionId = paymentIntent.metadata.orderId;
-      if (transactionId) {
-        await TransactionModel.findOneAndUpdate(
-          { id: transactionId },
-          { $set: { status: TransactionStatus.FAILED } },
-          { new: true },
-        );
-      }
-    }
+  await TransactionModel.create(newTransaction);
 
-    return { received: true };
-  } catch (err: any) {
-    throw new Error(`Stripe Webhook Error: ${err.message}`);
-  }
+  return paymentSession;
 };
 
-export const handleSepayWebhook = async (
-  payload: any,
-  signature: string,
-): Promise<{ received: boolean }> => {
-  const sepayAdapter = PaymentAdapterFactory.getAdapter(PaymentProvider.SEPAY);
-
-  try {
-    const verifiedPayload = sepayAdapter.verifyWebhookSignature(
-      payload,
-      signature,
-    );
-
-    const transactionId = verifiedPayload.order_invoice_number;
-    if (transactionId) {
-      await TransactionModel.findOneAndUpdate(
-        { id: transactionId },
-        { $set: { status: TransactionStatus.SUCCESS } },
-        { new: true },
-      );
-    }
-
-    return { received: true };
-  } catch (err: any) {
-    throw new Error(`Sepay Webhook Error: ${err.message}`);
-  }
+export const handleWebhook = async (
+  provider: PaymentProvider,
+  payload: unknown,
+  headers: Record<string, string | string[] | undefined>,
+) => {
+  const paymentAdapter = PaymentAdapterFactory.getAdapter(provider);
+  return paymentAdapter.handleWebhook(payload, headers);
 };

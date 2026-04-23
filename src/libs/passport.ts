@@ -15,21 +15,17 @@ import { UserModel } from "../models";
 import { JwtPayload } from "./jwt";
 
 const extractJWTFromRequest = (req: Request): string | null => {
-  try {
-    const authorization = req.headers?.authorization;
-    if (authorization) {
-      const [bearer, authToken] = authorization.split(" ");
-      if (bearer && bearer.toLowerCase() === "bearer" && authToken) {
-        return authToken;
-      }
-
-      return null;
+  const authorization = req.headers?.authorization;
+  if (authorization) {
+    const [bearer, authToken] = authorization.split(" ");
+    if (bearer && bearer.toLowerCase() === "bearer" && authToken) {
+      return authToken;
     }
 
     return null;
-  } catch (error) {
-    return null;
   }
+
+  return null;
 };
 
 export const passportJWTStrategy = new passportJwt.Strategy(

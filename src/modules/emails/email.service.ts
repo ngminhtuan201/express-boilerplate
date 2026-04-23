@@ -14,6 +14,14 @@ const transporter = nodemailer.createTransport({
 export const sendVerificationEmail = async (
   recevier: string,
   token: string,
-) => {
-  return;
+): Promise<void> => {
+  await transporter.sendMail({
+    from: config.RESEND_EMAIL_FROM,
+    to: recevier,
+    subject: "Verify your email",
+    html: `
+      <h1>Verify your email</h1>
+      <p>Please verify your email by clicking on the link: <a href="${config.APP_HOST}/api/auth/verify-email?token=${token}">Verify your email</a></p>
+    `,
+  });
 };

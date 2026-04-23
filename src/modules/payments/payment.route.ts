@@ -1,16 +1,15 @@
 import express from "express";
 import { authenticate, validateRequestBody } from "../../middlewares";
-import { checkoutSchema } from "./dtos";
-import { checkout, sepayWebhook, stripeWebhook } from "./payment.controller";
+import { createPaymentSchema } from "./dtos";
+import { checkout, handleWebhook } from "./payment.controller";
 
 export const paymentRouter = express.Router();
 
 paymentRouter.post(
-  "/checkout",
+  "/checkout/:provider",
   authenticate(),
-  validateRequestBody(checkoutSchema),
+  validateRequestBody(createPaymentSchema),
   checkout,
 );
 
-paymentRouter.post("/webhook/stripe", stripeWebhook);
-paymentRouter.post("/webhook/sepay", sepayWebhook);
+paymentRouter.post("/webhook/:provider", handleWebhook);

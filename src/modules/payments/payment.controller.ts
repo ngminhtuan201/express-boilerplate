@@ -1,34 +1,26 @@
-import { NextFunction, Request, Response } from "express";
+import { Request, Response } from "express";
+import { PaymentProvider } from "../../enums";
 import { catchAsync, getCurrentUser, handleSuccess } from "../../libs";
-import { CheckoutDto } from "./dtos";
-import {
-  checkout as checkoutService,
-  handleSepayWebhook,
-  handleStripeWebhook,
-} from "./payment.service";
+import { CreatePaymentDto } from "./dtos";
+import * as paymentService from "./payment.service";
 
 export const checkout = catchAsync(async (req: Request, res: Response) => {
-  const session = await checkoutService(
+  const provider = req.params.provider as PaymentProvider;
+  const session = await paymentService.createPaymentSession(
     getCurrentUser(req).id,
-    req.body as CheckoutDto,
+    provider,
+    req.body as CreatePaymentDto,
   );
 
-  return handleSuccess(res, session);
+  return handleSuccess(res, { session });
 });
 
-export const stripeWebhook = catchAsync(async (req: Request, res: Response) => {
-  const signature = req.headers["stripe-signature"] as string;
-  // req.rawBody was attached by express.json middleware in app.ts
-  const rawBody = (req as any).rawBody || req.body;
-  const result = await handleStripeWebhook(rawBody, signature);
+export const handleWebhook = catchAsync(async (req: Request, res: Response) => {
+  const result = await paymentService.handleWebhook(
+    req.params.provider as PaymentProvider,
+    req.body,
+    req.headers,
+  );
 
-  return handleSuccess(res, { result });
-});
-
-export const sepayWebhook = catchAsync(async (req: Request, res: Response) => {
-  // prettier-ignore
-  const signature = req.body.signature || (req.headers["x-sepay-signature"] as string);
-  const result = await handleSepayWebhook(req.body, signature);
-
-  return handleSuccess(res, { result });
+  return handleSuccess(res, result);
 });

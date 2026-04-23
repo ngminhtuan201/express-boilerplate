@@ -13,17 +13,19 @@ export const handleResponseError = (
   logger.error(error);
 
   if (error) {
-    const errorResponse: any = {
-      name: error.name || "Error",
-      message: error.message || "Something went wrong",
-      statusCode: error.statusCode || 500,
+    const errorResponse: unknown = {
+      name: error?.name || "Error",
+      message: error?.message || "Something went wrong",
+      statusCode: error?.statusCode || 500,
     };
 
     if (isDev && error.stack) {
-      errorResponse.stack = error.stack;
+      errorResponse["stack"] = error.stack;
     }
 
-    return res.status(errorResponse.statusCode).send({ error: errorResponse });
+    return res
+      .status(errorResponse["statusCode"])
+      .send({ error: errorResponse });
   }
 
   return res
