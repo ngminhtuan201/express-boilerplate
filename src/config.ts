@@ -18,6 +18,8 @@ export const config = {
 
   // Web client
   WEB_CLIENT_URL: process.env.WEB_CLIENT_URL || "http://localhost:3000",
+
+  // Cors
   CORS_ORIGINS: process.env.CORS_ORIGINS
     ? process.env.CORS_ORIGINS.split(",")
     : ["http://localhost:3000"],
