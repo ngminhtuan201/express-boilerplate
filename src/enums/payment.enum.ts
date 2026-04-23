@@ -19,6 +19,5 @@ export enum TransactionType {
 }
 
 export enum Currency {
-  VND = "vnd",
   USD = "usd",
 }

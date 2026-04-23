@@ -11,6 +11,10 @@ jest.mock("../../../models", () => ({
     findOne: jest.fn(),
     create: jest.fn(),
   },
+  RefreshTokenModel: {
+    create: jest.fn(),
+    deleteOne: jest.fn(),
+  },
 }));
 
 jest.mock("../auth.helper", () => ({

@@ -60,32 +60,24 @@ export function createPaginatedItems<T>(
   };
 }
 
-export function getPageSize(req: Request): number {
+export const getPageSize = (req: Request): number => {
   const pageSize = +req.query.pageSize;
 
   return pageSize && Number.isInteger(pageSize) && pageSize >= 1
     ? pageSize
     : DEFAULT_PAGE_SIZE;
-}
+};
 
-export function getPageNumber(req: Request): number {
+export const getPageNumber = (req: Request): number => {
   const pageNumber = +req.query.pageNumber;
 
   return pageNumber && Number.isInteger(pageNumber) && pageNumber >= 1
     ? pageNumber
     : DEFAULT_PAGE_NUMBER;
-}
+};
 
-export function getSortField(
-  req: Request,
-  fallbackField = "createdAt",
-): string | null {
-  return String(req.query?.sortField || "").trim() || fallbackField;
-}
+export const getSortField = (req: Request): string =>
+  String(req.query?.sortField || "").trim() || "updatedAt";
 
-export function getSortOrder(
-  req: Request,
-  fallbackOrder = "desc",
-): string | null {
-  return String(req.query?.sortOrder || "").trim() || fallbackOrder;
-}
+export const getSortOrder = (req: Request): string =>
+  String(req.query?.sortOrder || "").trim() || "desc";

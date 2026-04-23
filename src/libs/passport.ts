@@ -11,7 +11,7 @@ import {
 } from "passport-local";
 import { config } from "../config";
 import { errors } from "../errors";
-import { UserModel } from "../models";
+import { User, UserModel } from "../models";
 import { JwtPayload } from "./jwt";
 
 const extractJWTFromRequest = (req: Request): string | null => {
@@ -37,9 +37,14 @@ export const passportJWTStrategy = new passportJwt.Strategy(
   async (payload: JwtPayload, done: passportJwt.VerifiedCallback) => {
     try {
       const { userId } = payload;
-      const user = await UserModel.findById(userId);
+      const user = (await UserModel.findById(userId).lean().exec()) as User;
+
       if (!user) {
         return done(errors.Unauthorized);
+      }
+
+      if (!user.emailVerified) {
+        return done(errors.UnverifiedAccount);
       }
 
       done(null, user);

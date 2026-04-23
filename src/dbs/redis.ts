@@ -33,7 +33,3 @@ export const getRedis = (): IORedis => {
   }
   return redis;
 };
-
-export const REDIS_KEYS = {
-  VOICES: "voices",
-};

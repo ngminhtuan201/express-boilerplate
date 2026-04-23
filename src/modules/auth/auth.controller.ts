@@ -10,7 +10,7 @@ import {
   handleSuccess,
   verifyRefreshToken,
 } from "../../libs";
-import { User, UserModel } from "../../models";
+import { RefreshTokenModel, User, UserModel } from "../../models";
 import { AuthToken } from "../../types";
 import { authHelper } from "./auth.helper";
 import { login, register } from "./auth.service";
@@ -64,6 +64,12 @@ export const handleGoogleCallback = catchAsync(
     const jwtPayload = authHelper.extractJwtPayloadFromUser(user);
     const { accessToken, refreshToken } =
       authHelper.signResponseTokens(jwtPayload);
+
+    await RefreshTokenModel.create({
+      userId: user.id,
+      token: refreshToken.token,
+      expiresAt: refreshToken.expiresAt,
+    });
 
     setAuthCookie(res, refreshToken);
 
@@ -140,14 +146,25 @@ export const refreshToken = catchAsync(async (req: Request, res: Response) => {
   const { accessToken, refreshToken } =
     authHelper.signResponseTokens(jwtPayload);
 
+  await RefreshTokenModel.updateOne(
+    { token: refreshTokenCookie },
+    { $set: { token: refreshToken.token, expiresAt: refreshToken.expiresAt } },
+  );
+
   setAuthCookie(res, refreshToken);
 
   return handleSuccess(res, { accessToken });
 });
 
-export const logout = catchAsync((_req: Request, res: Response) => {
-  // TODO: Revoke/Disable tokens
+export const logout = catchAsync(async (req: Request, res: Response) => {
+  const refreshTokenCookie = req.cookies[config.COOKIE_AUTH];
+  if (!refreshTokenCookie) {
+    throw errors.Unauthorized;
+  }
+
+  await RefreshTokenModel.deleteOne({ token: refreshTokenCookie });
   res.clearCookie(config.COOKIE_AUTH);
+
   return handleSuccess(res, null);
 });
 
@@ -159,11 +176,13 @@ export const updateProfile = catchAsync(async (req: Request, res: Response) => {
   const currentUser = getCurrentUser(req);
   const dto = req.body as UpdateProfileDto;
 
-  const updatedUser = await UserModel.findOneAndUpdate(
+  const updatedUser = (await UserModel.findOneAndUpdate(
     { id: currentUser.id },
     { $set: dto },
     { new: true },
-  );
+  )
+    .lean()
+    .exec()) as User;
 
   return handleSuccess(res, { user: updatedUser });
 });

@@ -1,11 +1,11 @@
 import { UserRole } from "../../enums";
 import { errors } from "../../errors";
 import { documentId, signVerificationToken } from "../../libs";
-import { User, UserModel } from "../../models";
+import { RefreshTokenModel, User, UserModel } from "../../models";
 import { AuthToken } from "../../types";
+import { addSendEmailJob } from "../../worker/modules/emails/send-email.queue";
 import { authHelper } from "./auth.helper";
 import { ManualLoginDto, ManualRegisterDto } from "./dtos";
-import { addSendEmailJob } from "../../worker/modules/emails/send-email.queue";
 
 export const login = async (
   loginDto: ManualLoginDto,
@@ -33,6 +33,12 @@ export const login = async (
   const jwtPayload = authHelper.extractJwtPayloadFromUser(user);
   const { accessToken, refreshToken } =
     authHelper.signResponseTokens(jwtPayload);
+
+  await RefreshTokenModel.create({
+    userId: user.id,
+    token: refreshToken.token,
+    expiresAt: refreshToken.expiresAt,
+  });
 
   return {
     user,

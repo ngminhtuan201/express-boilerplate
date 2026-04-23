@@ -12,6 +12,7 @@ const getBaseSignOptions = (): SignOptions => ({
   // TODO: Add issuer
   // issuer: config.JWT_ISSUER,
   jwtid: `jwtid_${Date.now()}`,
+  algorithm: "HS256",
 });
 
 export const signAccessToken = (payload: JwtPayload): AuthToken => {

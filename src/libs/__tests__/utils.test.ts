@@ -173,12 +173,12 @@ describe("Utils Library", () => {
 
     it("should return fallback field if not provided", () => {
       const req = { query: {} } as unknown as Request;
-      expect(getSortField(req)).toBe("createdAt");
+      expect(getSortField(req)).toBe("updatedAt");
     });
 
     it("should return custom fallback field", () => {
       const req = { query: {} } as unknown as Request;
-      expect(getSortField(req, "updatedAt")).toBe("updatedAt");
+      expect(getSortField(req)).toBe("updatedAt");
     });
   });
 
