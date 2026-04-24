@@ -1,0 +1,31 @@
+# syntax=docker/dockerfile:1
+
+ARG NODE_VERSION=22.17.1
+
+# Stage 1: Builder
+FROM node:${NODE_VERSION}-alpine AS builder
+
+WORKDIR /usr/src/app
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY . .
+RUN npm run build
+
+# Stage 2: Runner
+FROM node:${NODE_VERSION}-alpine AS runner
+
+ENV NODE_ENV=production
+WORKDIR /usr/src/app
+
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+
+COPY --from=builder /usr/src/app/dist ./dist
+
+USER node
+
+EXPOSE 8000
+
+CMD ["node", "dist/src/server.js"]
