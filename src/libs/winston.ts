@@ -1,10 +1,19 @@
 import { createLogger, format, transports } from "winston";
+import { getRequestContext } from "./context";
 
 const enumerateErrorFormat = format((info) => {
   if (info instanceof Error) {
     Object.assign(info, {
       message: info.stack,
     });
+  }
+  return info;
+});
+
+const contextFormat = format((info) => {
+  const context = getRequestContext();
+  if (context) {
+    info.requestId = context.requestId;
   }
   return info;
 });
@@ -17,12 +26,16 @@ export const logger = createLogger({
   silent: isTest,
   format: format.combine(
     enumerateErrorFormat(),
+    contextFormat(),
     format.timestamp(),
-    format.uncolorize(),
+    isDev ? format.colorize() : format.uncolorize(),
     format.splat(),
-    format.printf(
-      ({ level, message, timestamp }) => `${timestamp} ${level}: ${message}`,
-    ),
+    isDev
+      ? format.printf(
+          ({ level, message, timestamp, requestId }) =>
+            `${timestamp} ${level}: ${requestId ? `[${requestId}] ` : ""}${message}`,
+        )
+      : format.json(),
   ),
   transports: [
     new transports.Console({

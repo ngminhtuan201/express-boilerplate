@@ -1,41 +1,29 @@
-import fs from "fs";
+import fs from "fs/promises";
 import path from "path";
 import { config } from "../../../config";
 import { logger } from "../../../libs";
-import { IStorageAdapter } from "./interface";
+import { IStorageAdapter, UploadFile, UploadFileResult } from "./interface";
 
 export class LocalStorageAdapter implements IStorageAdapter {
   private readonly _rootDir = config.LOCAL_STORAGE_DIR;
 
-  constructor(rootDir?: string) {
+  constructor() {
     logger.info("📦 [storage] Local storage adapter initialized");
-
-    if (rootDir) {
-      this._rootDir = rootDir;
-    }
-
-    if (!fs.existsSync(this._rootDir)) {
-      fs.mkdirSync(this._rootDir, { recursive: true });
-    }
   }
 
-  async uploadFile(filePath: string, directory: string): Promise<string> {
-    const targetDir = path.join(this._rootDir, directory);
-    fs.mkdirSync(targetDir, { recursive: true });
+  async uploadFile(file: UploadFile): Promise<UploadFileResult> {
+    const key = `${Date.now()}-${file.file.originalname}`;
+    const filePath = path.join(this._rootDir, key);
 
-    const filename = `${Date.now()}_${path.basename(filePath)}`;
-    const destinationPath = path.join(targetDir, filename);
-    fs.copyFileSync(filePath, destinationPath);
+    await fs.writeFile(filePath, file.file.buffer);
 
-    const relativeKey = directory ? path.join(directory, filename) : filename;
-
-    return relativeKey.replace(/\\/g, "/"); // fix windows path
+    return {
+      key,
+      url: `/${this._rootDir}/${key}`,
+    };
   }
 
   async deleteFile(key: string): Promise<void> {
-    const filePath = path.join(this._rootDir, key);
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
+    await fs.unlink(path.join(this._rootDir, key));
   }
 }

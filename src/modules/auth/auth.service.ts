@@ -21,7 +21,7 @@ export const login = async (
     !user ||
     user.oauthProvider ||
     !user?.hashedPassword ||
-    !authHelper.comparePassword(password, user.hashedPassword)
+    !(await authHelper.comparePassword(password, user.hashedPassword))
   ) {
     throw errors.InvalidCredentials;
   }
@@ -67,7 +67,7 @@ export const register = async (
     emailVerified: false,
     fullName: fullName,
     role: UserRole.USER,
-    hashedPassword: authHelper.hashPassword(password),
+    hashedPassword: await authHelper.hashPassword(password),
     verificationToken: verificationToken,
     verificationTokenExpiry: new Date(Date.now() + 15 * 60 * 1000),
   };

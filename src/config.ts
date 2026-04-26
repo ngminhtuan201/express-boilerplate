@@ -69,7 +69,7 @@ export const config = {
   LOCAL_STORAGE_DIR: process.env.LOCAL_STORAGE_DIR || "storages",
 
   // Upload
-  UPLOAD_DIR: process.env.UPLOAD_DIR || "upload",
+  UPLOAD_SIZE_LIMIT: +process.env.UPLOAD_SIZE_LIMIT || 1024 * 1024 * 10,
 
   // Redis
   REDIS_HOST: process.env.REDIS_HOST || "localhost",

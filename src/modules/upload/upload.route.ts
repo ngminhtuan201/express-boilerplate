@@ -1,8 +1,8 @@
 import express from "express";
-import multer from "multer";
+import { uploader } from "../../libs";
+import { authenticate } from "../../middlewares";
 import { uploadFile } from "./upload.controller";
 
 export const uploadRouter = express.Router();
-const upload = multer({ storage: multer.memoryStorage() });
 
-uploadRouter.post("/", upload.single("file"), uploadFile);
+uploadRouter.post("/", authenticate(), uploader.single("file"), uploadFile);

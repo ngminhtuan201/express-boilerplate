@@ -8,9 +8,13 @@ morgan.token("message", (_req: Request, res: Response) => {
   return res.locals.errorMessage || "no message";
 });
 
+morgan.token("requestId", (req: Request) => {
+  return (req.headers["x-request-id"] as string) || "no-id";
+});
+
 const getIpFormat = (): string => (isProduction ? ":remote-addr - " : "");
-const successResponseFormat = `✅ [request] ${getIpFormat()}:method :url :status - :response-time ms`;
-const errorResponseFormat = `❌ [request] ${getIpFormat()}:method :url :status - :response-time ms - message: :message`;
+const successResponseFormat = `✅ [request] [:requestId] ${getIpFormat()}:method :url :status - :response-time ms`;
+const errorResponseFormat = `❌ [request] [:requestId] ${getIpFormat()}:method :url :status - :response-time ms - message: :message`;
 
 export const morganRequestSuccessHandler = morgan(successResponseFormat, {
   skip: (_req: Request, res: Response) => res.statusCode >= 400,

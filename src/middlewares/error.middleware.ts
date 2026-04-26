@@ -1,6 +1,6 @@
-import { Request, Response, NextFunction } from "express";
+import { NextFunction, Request, Response } from "express";
 import { AppError } from "../errors";
-import { logger } from "../libs";
+import { getRequestContext, logger } from "../libs";
 
 const isDev = process.env.NODE_ENV === "development";
 
@@ -10,25 +10,22 @@ export const handleResponseError = (
   res: Response,
   _next: NextFunction,
 ) => {
+  const context = getRequestContext();
+  const requestId = context?.requestId;
+
   logger.error(error);
 
-  if (error) {
-    const errorResponse: unknown = {
-      name: error?.name || "Error",
-      message: error?.message || "Something went wrong",
-      statusCode: error?.statusCode || 500,
-    };
+  const statusCode = error?.statusCode || 500;
+  const errorResponse: any = {
+    name: error?.name || "Error",
+    message: error?.message || "Something went wrong",
+    statusCode,
+    requestId,
+  };
 
-    if (isDev && error.stack) {
-      errorResponse["stack"] = error.stack;
-    }
-
-    return res
-      .status(errorResponse["statusCode"])
-      .send({ error: errorResponse });
+  if (isDev && error.stack) {
+    errorResponse.stack = error.stack;
   }
 
-  return res
-    .status(500)
-    .send({ error: { message: "Internal Server Error", statusCode: 500 } });
+  return res.status(statusCode).send({ error: errorResponse });
 };

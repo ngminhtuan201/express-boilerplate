@@ -9,18 +9,18 @@ import { JwtPayload } from "../../libs/jwt";
 import { User, UserModel } from "../../models";
 import { AuthToken } from "../../types";
 
-export const hashPassword = (password: string): string => {
+export const hashPassword = async (password: string): Promise<string> => {
   const rounds = 10;
-  const salt = bcrypt.genSaltSync(rounds);
+  const salt = await bcrypt.genSalt(rounds);
 
-  return bcrypt.hashSync(password, salt);
+  return bcrypt.hash(password, salt);
 };
 
-export const comparePassword = (
+export const comparePassword = async (
   password: string,
   hashedPassword: string,
-): boolean => {
-  return bcrypt.compareSync(password, hashedPassword);
+): Promise<boolean> => {
+  return bcrypt.compare(password, hashedPassword);
 };
 
 export const extractJwtPayloadFromUser = (user: User): JwtPayload => {

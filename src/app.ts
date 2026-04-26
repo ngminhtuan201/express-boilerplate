@@ -17,6 +17,7 @@ import RedisRateLimitStore from "rate-limit-redis";
 import winston from "winston";
 import { config } from "./config";
 import { connectToMongoDB, getRedis, initRedis } from "./dbs";
+import { StorageProvider } from "./enums";
 import {
   logger,
   morganRequestFailedHandler,
@@ -26,6 +27,7 @@ import {
   passportLocalStrategy,
 } from "./libs";
 import { handleResponseError } from "./middlewares";
+import { contextMiddleware } from "./middlewares/context.middleware";
 import { setupSwagger } from "./swagger";
 
 // Worker modules
@@ -57,6 +59,7 @@ class ServerApp {
 
       // Security
       this.app.use(helmet());
+      this.app.use(contextMiddleware);
 
       // Rate limiting
       const limiter = rateLimit({
@@ -94,10 +97,14 @@ class ServerApp {
       );
 
       // Static files
-      this.app.use(
-        "/storages",
-        express.static(path.join(__dirname, "../storages")),
-      );
+      if (config.STORAGE_PROVIDER === StorageProvider.LOCAL) {
+        this.app.use(
+          `/${config.LOCAL_STORAGE_DIR}`,
+          express.static(
+            path.join(__dirname, `../${config.LOCAL_STORAGE_DIR}`),
+          ),
+        );
+      }
 
       // MongoDB
       this.logger.info("📦 [mongodb] Connecting...");

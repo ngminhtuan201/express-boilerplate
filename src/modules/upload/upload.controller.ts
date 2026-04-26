@@ -1,15 +1,15 @@
-import { NextFunction, Request, Response } from "express";
+import { Request, Response } from "express";
 import { errors } from "../../errors";
-import { catchAsync } from "../../libs";
+import { catchAsync, handleSuccess } from "../../libs";
+import * as uploadService from "./upload.service";
 
-export const uploadFile = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      if (!req.file) {
-        throw errors.FileMissing;
-      }
-    } catch (error) {
-      next(error);
-    }
-  },
-);
+export const uploadFile = catchAsync(async (req: Request, res: Response) => {
+  const file = req.file;
+
+  if (!file) {
+    throw errors.FileMissing;
+  }
+
+  const result = await uploadService.uploadFile({ file });
+  return handleSuccess(res, { ...result });
+});
