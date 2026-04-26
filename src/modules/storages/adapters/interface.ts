@@ -8,13 +8,6 @@ export interface UploadFileResult {
 }
 
 export interface IStorageAdapter {
-  /**
-   * Upload a file from local to storage
-   */
   uploadFile(file: UploadFile): Promise<UploadFileResult>;
-
-  /**
-   * Delete a file from storage
-   */
   deleteFile(key: string): Promise<void>;
 }

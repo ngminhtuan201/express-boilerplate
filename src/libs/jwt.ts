@@ -9,8 +9,6 @@ export interface JwtPayload {
 const minutesToMilliseconds = (minutes: number): number => minutes * 60 * 1000;
 
 const getBaseSignOptions = (): SignOptions => ({
-  // TODO: Add issuer
-  // issuer: config.JWT_ISSUER,
   jwtid: `jwtid_${Date.now()}`,
   algorithm: "HS256",
 });
