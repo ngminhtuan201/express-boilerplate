@@ -37,7 +37,9 @@ export const passportJWTStrategy = new passportJwt.Strategy(
   async (payload: JwtPayload, done: passportJwt.VerifiedCallback) => {
     try {
       const { userId } = payload;
-      const user = (await UserModel.findById(userId).lean().exec()) as User;
+      const user = (await UserModel.findOne({ id: userId })
+        .lean()
+        .exec()) as User;
 
       if (!user) {
         return done(errors.Unauthorized);
